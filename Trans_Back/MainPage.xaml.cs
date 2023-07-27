@@ -17,7 +17,6 @@ using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
 using Windows.UI.Xaml.Data;
 using Windows.UI.Xaml.Input;
-using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 
 using FontFamily = System.Drawing.FontFamily;
@@ -31,7 +30,7 @@ using System.Xml.Linq;
 using System.Threading;
 using Windows.Storage;
 
-namespace Trans_Back
+namespace Windows_Font_Changer
 {
     public sealed partial class MainPage : Page
     {
@@ -51,9 +50,7 @@ namespace Trans_Back
             {
                 Fonts[i + 1] = local_Fonts[i].ToString();
             }
-            display_Fonts = (string[])Fonts.Clone();
-
-            pathAsync();
+            display_Fonts = (string[])Fonts.Clone(); 
         }
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
@@ -66,7 +63,9 @@ namespace Trans_Back
             var font_Name = e.ClickedItem.ToString();
             Thread.Sleep(milliseconds);
 
-            replacing(font_Name);
+            //replacing(font_Name);
+            comboFonts_SelectionChanged(font_Name);
+            // providing font name to user
         }
         private async void message(String Title, String Content, String btn_Content)
         {
@@ -75,7 +74,7 @@ namespace Trans_Back
             dialog.Content = Content;
             dialog.PrimaryButtonText = btn_Content;
             dialog.DefaultButton = ContentDialogButton.Primary;
-            var result = await dialog.ShowAsync();
+            await dialog.ShowAsync();
         }
         private void Button_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
@@ -114,68 +113,93 @@ namespace Trans_Back
                 comboFonts.ItemsSource = Fonts;
             }
         }
-        String dublicate_file_Path = @"Assets\changer.reg";
-        private async Task<string> pathAsync()
+
+        private async Task<String> copyFile()
         {
-            StorageFolder InstallationFolder = Windows.ApplicationModel.Package.Current.InstalledLocation;
-
-            String file_Path = @"Assets\original file.bat";
-            StorageFile original_File2 = await InstallationFolder.GetFileAsync(file_Path);
-
-            StorageFile dublicate_File2 = await InstallationFolder.GetFileAsync(dublicate_file_Path);
-
-
-            if (File.Exists(dublicate_File2.ToString()))
+            StorageFolder localFolder = null;
+            try
             {
-                File.Delete(dublicate_File2.ToString());
-                File.Copy(file_Path, dublicate_file_Path);
-            }
-            else
-            {
-                if (File.Exists(original_File2.ToString()))
+                localFolder = ApplicationData.Current.LocalFolder;
+                StorageFile file = await StorageFile.GetFileFromApplicationUriAsync(new Uri("ms-appx:///Assets/original.reg"));
+
+                if (file == null)
                 {
-                    File.Copy(file_Path, dublicate_file_Path);
+                    message("Error", "File not found", "Ok");
+                    return null;
+                }
+
+                // Check if file already exists in local folder and delete it
+                StorageFile existingFile = await localFolder.TryGetItemAsync("original.reg") as StorageFile;
+                if (existingFile != null)
+                {
+                    await existingFile.DeleteAsync();
+                }
+
+                // Copy the file to the local folder
+                await file.CopyAsync(localFolder, "original.reg", NameCollisionOption.ReplaceExisting);
+
+                // Return the copied file
+                return localFolder.Path + "\\original.reg";
+            }
+            catch (Exception ex)
+            {
+                // Handle the exception
+                if (ex.HResult == unchecked((int)0x800C000E))
+                {
+                    // A security problem occurred
+                    message("Error", "A security problem occurred", "Ok");
                 }
                 else
                 {
-                    message("Error", "Reinstall It!", "OK");
-                    return null;
+                    // Other exception occurred
+                    message("Error", ex.Message, "Ok");
                 }
+                return null;
             }
-            return null;
+        }
+        
+        // take path from copyFile() method and replace font name in the file with the font name that user selected
+        private async Task replacing(String font_Name)
+        {
+            try
+            {
+                String path = await copyFile();
+                //String text = File.ReadAllText(path);
+
+                //text = text.Replace("Segoe UI", font_Name);
+                //File.WriteAllText(path, text);
+
+                //Process process = new Process();
+                //process.StartInfo.FileName = "cmd.exe";
+                //process.StartInfo.UseShellExecute = true;
+                //process.StartInfo.Arguments = "/c regedit.exe /s " + path;
+                //process.StartInfo.Verb = "runas";
+                //process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                //process.Start();
+            }
+            catch (Exception ex)
+            {
+                message("Message", ex.Message , "ok");
+            }
+
         }
 
-        private void runner()
+        // after doing that run the file and restart the application
+        private void comboFonts_SelectionChanged(String font_Name)
         {
-            Process p = new Process();                          //creating new process 
-            ProcessStartInfo pi = new ProcessStartInfo();       //checkin ProcessStartInfo or i dont know
-            pi.UseShellExecute = true;
-            pi.FileName = dublicate_file_Path;                             //defining file location 
-            p.StartInfo = pi;                                   //geting file info
-            try                                                 //try if file exeist run it or not throw error or if user mannuly close the file it also throw an error
+            if (font_Name != "Default")
             {
-                p.Start();                                      //simply file.run
-            }
-            catch (Exception Ex)                                //capturing unexpected error like file crash or file not found or user mannuly close the file it also throw an error
-            {
-                message("Error", Ex.ToString(), "ok");                    //displaying error only
+                replacing(font_Name);
             }
         }
-        private void replacing(String name)                     //this function replacing "Consolas" text with new font given or selected by user
+
+
+        // after doing that delete the file from temp path
+        private async void deleteFile()
         {
-            String new_Path = dublicate_file_Path;
-            try                                                 //try for try if not work go to catch (Exception Ex) function
-            {
-                string str = File.ReadAllText(new_Path);        //reading all text in dublicate file 
-                str = str.Replace("Consolas", name);            //replacing "Consolas font" with user selected font
-                File.WriteAllText(new_Path, str);               //replacing "Consolas font" with user selected font
-                runner();                                       //calling runner function for run main file (which is important for font changing) or execute/run reg file!
-            }
-            catch (Exception Ex)                                //Exception for catching unexpected error for printing on display
-            {
-                //message(Ex.ToString(), "if you are seeing this means you close this or unexpexted error");//just displaying a unknown error 
-                message("Error", Ex.ToString(), "ok");                    //displaying error only
-            }
+            StorageFolder localFolder = ApplicationData.Current.LocalFolder;
+            StorageFile file = await StorageFile.GetFileFromApplicationUriAsync(new Uri("ms-appx:///Assets/original.reg"));
+            await file.DeleteAsync();
         }
     }
 }

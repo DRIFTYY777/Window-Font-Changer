@@ -15,7 +15,7 @@ using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 
-namespace Trans_Back
+namespace Windows_Font_Changer
 {
     /// <summary>
     /// Provides application-specific behavior to supplement the default Application class.
