@@ -114,86 +114,13 @@ namespace Windows_Font_Changer
             }
         }
 
-        private async Task<String> copyFile()
-        {
-            StorageFolder localFolder = null;
-            try
-            {
-                localFolder = ApplicationData.Current.LocalFolder;
-                StorageFile file = await StorageFile.GetFileFromApplicationUriAsync(new Uri("ms-appx:///Assets/original.reg"));
-
-                if (file == null)
-                {
-                    message("Error", "File not found", "Ok");
-                    return null;
-                }
-
-                // Check if file already exists in local folder and delete it
-                StorageFile existingFile = await localFolder.TryGetItemAsync("original.reg") as StorageFile;
-                if (existingFile != null)
-                {
-                    await existingFile.DeleteAsync();
-                }
-
-                // Copy the file to the local folder
-                await file.CopyAsync(localFolder, "original.reg", NameCollisionOption.ReplaceExisting);
-
-                // Return the copied file
-                return localFolder.Path + "\\original.reg";
-            }
-            catch (Exception ex)
-            {
-                // Handle the exception
-                if (ex.HResult == unchecked((int)0x800C000E))
-                {
-                    // A security problem occurred
-                    message("Error", "A security problem occurred", "Ok");
-                }
-                else
-                {
-                    // Other exception occurred
-                    message("Error", ex.Message, "Ok");
-                }
-                return null;
-            }
-        }
-        
-        // take path from copyFile() method and replace font name in the file with the font name that user selected
-        private async Task replacing(String font_Name)
-        {
-            try
-            {
-                String path = await copyFile();
-                //String text = File.ReadAllText(path);
-
-                //text = text.Replace("Segoe UI", font_Name);
-                //File.WriteAllText(path, text);
-
-                //Process process = new Process();
-                //process.StartInfo.FileName = "cmd.exe";
-                //process.StartInfo.UseShellExecute = true;
-                //process.StartInfo.Arguments = "/c regedit.exe /s " + path;
-                //process.StartInfo.Verb = "runas";
-                //process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                //process.Start();
-            }
-            catch (Exception ex)
-            {
-                message("Message", ex.Message , "ok");
-            }
-
-        }
-
-        // after doing that run the file and restart the application
         private void comboFonts_SelectionChanged(String font_Name)
         {
             if (font_Name != "Default")
             {
-                replacing(font_Name);
+                antyAsync("E:/visual project/C# WUP/Windows_Font_Changer/Trans_Back/Assets/File.bat");
             }
         }
-
-
         // after doing that delete the file from temp path
         private async void deleteFile()
         {
@@ -201,8 +128,38 @@ namespace Windows_Font_Changer
             StorageFile file = await StorageFile.GetFileFromApplicationUriAsync(new Uri("ms-appx:///Assets/original.reg"));
             await file.DeleteAsync();
         }
+
+        private async Task antyAsync(String path)
+        {
+            await CopyFileFromAssetsToTempFolderAsync(path);
+        }
+
+        public async Task CopyFileFromAssetsToTempFolderAsync(string assetFileName)
+        {
+            try
+            {
+                // Get a reference to the temporary folder
+                StorageFolder tempFolder = ApplicationData.Current.TemporaryFolder;
+
+                // Get a reference to the app's package folder (where assets are located)
+                StorageFolder appPackageFolder = Windows.ApplicationModel.Package.Current.InstalledLocation;
+
+                // Get a StorageFile reference to the asset file
+                StorageFile assetFile = await appPackageFolder.GetFileAsync(assetFileName);
+
+                // Copy the asset file to the temporary folder
+                await assetFile.CopyAsync(tempFolder, assetFileName, NameCollisionOption.ReplaceExisting);
+
+                // Handle the copied file as needed
+            }
+            catch (Exception ex)
+            {
+                // Handle any exceptions that may occur
+                Console.WriteLine($"Error: {ex.Message}");
+                message("tile", $"Error: {ex.Message}", "ok");
+            }
+        }
     }
 }
 
 
-//I have a problem with the code. I want to change the font of the text in the application. I have a list of fonts and when I click on the font, the font changes. The problem is that the font changes only after the application is restarted. I want to change the font without restarting the application. I tried to use the registry, but it didn't work. I tried to use the code below, but it didn't work either. I don't know what to do. I would be grateful for any help. (USER => ){and this line is written by gitcopilot}
