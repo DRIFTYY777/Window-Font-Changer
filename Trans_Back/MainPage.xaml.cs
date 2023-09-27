@@ -1,34 +1,19 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Drawing;
-using System.Drawing.Text;
-using System.IO;
+
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
-using System.Threading.Tasks;
-using Windows.ApplicationModel.Contacts;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
-using Windows.UI;
-using Windows.UI.Text;
+
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Controls.Primitives;
-using Windows.UI.Xaml.Data;
+
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Navigation;
 
-using FontFamily = System.Drawing.FontFamily;
-using System.Security.AccessControl;
-using System.Text;
-using System.Diagnostics;
-using System.Globalization;
+
 using Microsoft.UI.Xaml.Controls;
-using Windows.UI.Xaml.Documents;
-using System.Xml.Linq;
 using System.Threading;
-using Windows.Storage;
+using Microsoft.Win32;
+using System.Runtime.InteropServices;
 
 namespace Windows_Font_Changer
 {
@@ -114,49 +99,32 @@ namespace Windows_Font_Changer
             }
         }
 
+        [DllImport("test.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
+        public static extern int sssss(string regFilePath);
+
+
         private void comboFonts_SelectionChanged(String font_Name)
         {
-            if (font_Name != "Default")
+            if (font_Name == "Default")
             {
-                antyAsync("E:/visual project/C# WUP/Windows_Font_Changer/Trans_Back/Assets/File.bat");
+                font_Name = "Segoe UI";
             }
-        }
-        // after doing that delete the file from temp path
-        private async void deleteFile()
-        {
-            StorageFolder localFolder = ApplicationData.Current.LocalFolder;
-            StorageFile file = await StorageFile.GetFileFromApplicationUriAsync(new Uri("ms-appx:///Assets/original.reg"));
-            await file.DeleteAsync();
-        }
-
-        private async Task antyAsync(String path)
-        {
-            await CopyFileFromAssetsToTempFolderAsync(path);
-        }
-
-        public async Task CopyFileFromAssetsToTempFolderAsync(string assetFileName)
-        {
             try
             {
-                // Get a reference to the temporary folder
-                StorageFolder tempFolder = ApplicationData.Current.TemporaryFolder;
-
-                // Get a reference to the app's package folder (where assets are located)
-                StorageFolder appPackageFolder = Windows.ApplicationModel.Package.Current.InstalledLocation;
-
-                // Get a StorageFile reference to the asset file
-                StorageFile assetFile = await appPackageFolder.GetFileAsync(assetFileName);
-
-                // Copy the asset file to the temporary folder
-                await assetFile.CopyAsync(tempFolder, assetFileName, NameCollisionOption.ReplaceExisting);
-
-                // Handle the copied file as needed
+                string regFilePath = @"C:\Users\dhima\AppData\Local\Packages\9df81f4c-7e10-440d-99b8-f4b1770bf348_844j25bcfdrry\AC\Temp\test.reg";
+                int result = sssss(regFilePath);
+                if (result == 0)
+                {
+                    Console.WriteLine("Success: The .reg file has been executed.");
+                }
+                else
+                {
+                    Console.WriteLine("An error occurred.");
+                }
             }
-            catch (Exception ex)
+            catch(Exception e)
             {
-                // Handle any exceptions that may occur
-                Console.WriteLine($"Error: {ex.Message}");
-                message("tile", $"Error: {ex.Message}", "ok");
+                message("Error", e.Message, "OK");
             }
         }
     }
